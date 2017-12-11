@@ -11,7 +11,7 @@ import redis
 import threading
 import time
 import signal
-# TODO: add args (test)
+
 INPUT_CHANNEL = 'input'
 RESULT_CHANNEL = 'output'
 SUPPORTED_OPS = ['+', '-', '*', '/']
