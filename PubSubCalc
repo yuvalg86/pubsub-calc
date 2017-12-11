@@ -94,7 +94,6 @@ class Listener(threading.Thread):
                 self.exit_gracefully()
 
 def main(args):
-    signal.signal(signal.SIGINT, signal_handler)
     try:
         conn = redis.StrictRedis(host=REDIS_HOST, port=REDIS_PORT)
         client = Listener(conn, [INPUT_CHANNEL])
