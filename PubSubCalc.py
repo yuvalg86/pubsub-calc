@@ -1,5 +1,5 @@
-"""
-PubSub Calculator
+#!/usr/bin/env python3
+""" PubSub Calculator
 Usage:
   PubSubCalc.py [test]
   PubSubCalc.py (-h | --help)
@@ -20,24 +20,16 @@ REDIS_HOST = 'localhost'
 REDIS_PORT = 6379
 
 
-def check_and_parse_input(data):
-    print (data)
-    if len(data) != 3:
-        raise Exception('illegal number of args')
-    if data[0] not in SUPPORTED_OPS:
-        print('first arg should be one of', SUPPORTED_OPS, 'received', data[0])
-        raise Exception('unsuported operator')
-    try:
-        float(data[1])
-        float(data[2])
-    except ValueError as v:
-        print('illegal input:', data)
-        raise Exception('unsuported arg')
-    result = '{} {} {}'.format(data[1], data[0], data[2])
-    return result
-
-
 class Listener(threading.Thread):
+    def __init__(self, conn, channel):
+        try:
+            threading.Thread.__init__(self)
+            self.redis = conn
+            self.pubsub = self.redis.pubsub()
+            self.subscribe_and_check(channel)
+        except Exception as e:
+            print('error on thread init.', e)
+
     def subscribe_and_check(self, channel):
         self.pubsub.subscribe(channel)
         # check subscption
@@ -49,14 +41,19 @@ class Listener(threading.Thread):
             raise Exception('error subscribing to channel', channel)
         print('started Listener on', channel)
 
-    def __init__(self, conn, channel):
+    @staticmethod
+    def check_and_parse_input(data):
+        if len(data) != 3:
+            raise Exception('illegal number of args')
+        if data[0] not in SUPPORTED_OPS:
+            raise Exception('illegal operator. allowed:' + str(SUPPORTED_OPS))
         try:
-            threading.Thread.__init__(self)
-            self.redis = conn
-            self.pubsub = self.redis.pubsub()
-            self.subscribe_and_check(channel)
-        except Exception as e:
-            print('error on thread init.', e)
+            float(data[1])
+            float(data[2])
+        except ValueError as v:
+            raise Exception('illegal arg')
+        result = '{} {} {}'.format(data[1], data[0], data[2])
+        return result
 
     def calc(self, data):
         # this part could be a switch case or map... which might be more safe.
@@ -65,11 +62,12 @@ class Listener(threading.Thread):
         try:
             # remove multiple and trailing spaces
             input_args = ' '.join(data.split()).strip()
-            args = check_and_parse_input(input_args.split(' '))
+            args = Listener.check_and_parse_input(input_args.split(' '))
             if args:
                 result = eval(args)
                 res = self.redis.publish(RESULT_CHANNEL, result)
-                print (res)
+                if (res != 1):
+                    raise Exception('error publishing result to channel')
         except Exception as e:
             print('cant calc input msg', data, 'error:', e)
 
@@ -104,12 +102,12 @@ def main(args):
         print('error connecting to REDIS server.', e)
     if (args['test']):
         try:
-            # sanity (legal input)
+            print('sanity (legal input), no output should be printed')
             conn.publish('input', '+    15.5  5')
             conn.publish('input', '-   15.7 0.7 ')
             conn.publish('input', '* -3   5')
             conn.publish('input', '/ 30  5')
-            # illegal input
+            print('illegal input')
             conn.publish('input', '! 2 2')
             conn.publish('input', 'a   2  4   ')
             conn.publish('input', '+ 2 self')
