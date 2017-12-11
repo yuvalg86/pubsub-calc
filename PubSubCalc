@@ -18,7 +18,6 @@ KILL_CMD = 'DIE'
 REDIS_HOST = 'localhost'
 REDIS_PORT = 6379
 
-kill_received = [False]
 
 def check_and_parse_input(data):
     print (data)
@@ -35,6 +34,7 @@ def check_and_parse_input(data):
         raise Exception('unsuported arg')
     result = '{} {} {}'.format(data[1], data[0], data[2])
     return result
+
 
 class Listener(threading.Thread):
     def subscribe_and_check(self, channel):
@@ -56,11 +56,11 @@ class Listener(threading.Thread):
             self.subscribe_and_check(channel)
         except Exception as e:
             print('error on thread init.', e)
-    
+
     def calc(self, data):
         # this part could be a switch case or map... which might be more safe.
-        # wasnt sure what is prefered by you.
-        # thus did what I prefered - which is more general than restricted yet with some safety checks.
+        # wasnt sure what is prefered by you - thus did what I prefered:
+        # more general than restricted yet with some safety checks.
         try:
             # remove multiple and trailing spaces
             input_args = ' '.join(data.split()).strip()
@@ -84,7 +84,7 @@ class Listener(threading.Thread):
                 if (item['type'] != 'message'):
                     continue
                 data = str(item['data'], 'utf-8')
-                if  data == KILL_CMD:
+                if data == KILL_CMD:
                     self.exit_gracefully()
                     break
                 else:
@@ -92,6 +92,7 @@ class Listener(threading.Thread):
         except Exception as e:
                 print ('error on listener')
                 self.exit_gracefully()
+
 
 def main(args):
     try:
