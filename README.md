@@ -3,8 +3,8 @@
 basic calculator using redis pub-sub.
 
 # prereqs
-pip install docopt redis
-working redis server on localhost:6379
+<*> pip install docopt redis
+<*> working redis server on localhost:6379 [should be args in next version]
 
 # usage
   PubSubCalc.py [test]
